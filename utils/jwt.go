@@ -1,6 +1,9 @@
 package Utils
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -211,7 +214,7 @@ func GenBcryptStr(content []byte, rounds int) (string, error) {
 	return string(result), nil
 }
 
-//hmac加密
+// hmac加密
 func HmacEncode(key string, data string) string {
 	mac := hmac.New(sha256.New, []byte(key))
 	mac.Write([]byte(data))
