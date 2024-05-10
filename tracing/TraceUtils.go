@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/TarsCloud/TarsGo/tars"
 	"github.com/TarsCloud/TarsGo/tars/util/current"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"runtime"
@@ -125,7 +124,7 @@ func ReportServiceInfoToTracing(ctx context.Context) error {
 }
 
 func StartTraceAndSpan(tarsCtx context.Context, name string) (ctx context.Context, span trace.Span) {
-	ctx, span = otel.Tracer("").Start(tarsCtx, name)
+	ctx, span = tp.Tracer("").Start(tarsCtx, name)
 	return
 }
 
