@@ -7,7 +7,7 @@ import (
 )
 
 func IsChinese(param string) bool {
-	result, err := regexp.MatchString(`^\\p{Han}+$`, param)
+	result, err := regexp.MatchString(`^[\p{Han}]+$`, param)
 	if err != nil {
 		return result
 	}
@@ -41,13 +41,13 @@ func IsNum(param string) bool {
 func IsIdCard(param string) (bool, error) {
 	switch len(param) {
 	case 18:
-		result, err := regexp.MatchString(`^(\d{17})([0-9]|X)$`, param)
+		result, err := regexp.MatchString(`(^\\d{18}$)|(^\\d{17}(\\d|X|x)$)`, param)
 		if err != nil {
 			return result, err
 		}
 		break
 	case 15:
-		result, err := regexp.MatchString(`^(\d{15})$`, param)
+		result, err := regexp.MatchString(`(^\\d{15}$)`, param)
 		if err != nil {
 			return result, err
 		}
