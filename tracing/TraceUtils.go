@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/TarsCloud/TarsGo/tars"
 	"github.com/TarsCloud/TarsGo/tars/util/current"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"runtime"
 )
 
 type TraceIDs struct {
@@ -67,33 +69,27 @@ func ReportHttpRequestToTracing(ctx context.Context, name string, Body map[strin
 	span.End()
 }
 
-//func StartTrace(parentCtx context.Context, spanName string, opts ...trace.SpanStartOption) (currentCtx context.Context, span trace.Span) {
-//	//只有一个tracer，不再指定了
-//	//opts = append(opts, trace.WithAttributes(attribute.String("AppVersoin", util.AnyToStr(version.GetAppVersion()))))
-//	currentCtx, span = otel.Tracer("").Start(parentCtx, spanName, opts...)
-//
-//	return
-//}
+type CurrentStackInfo struct {
+	FullStack       []uintptr
+	CurrentStack    uintptr
+	CurrentFn       string
+	CurrentFnLine   int
+	CurrentFileName string
+	OK              bool
+}
 
-//func EndTrace(currentCtx context.Context, msgs ...any) {
-//	span := trace.SpanFromContext(currentCtx)
-//	if span == nil {
-//		return
-//	}
-//
-//	msgs = append(msgs, WithCallerDepth(1))
-//	TraceAddLog(currentCtx, msgs...)
-//	span.End()
-//
-//}
-//
-//func TraceHandler(parentCtx context.Context, spanName string, handlerFunc func(ctx context.Context) error) error {
-//	currentCtx, _ := StartTrace(parentCtx, spanName)
-//	defer func() {
-//		EndTrace(curCtx, err, WithCallerDepth(1))
-//	}()
-//
-//	err = handleFunc(curCtx)
-//	return
-//
-//}
+func ReportServiceInfoToTracing(ctx context.Context) error {
+	Stack := CurrentStackInfo{}
+	if Stack.CurrentStack, Stack.CurrentFileName, Stack.CurrentFnLine, Stack.OK = runtime.Caller(1); !Stack.OK {
+		return errors.New("获取当前调用栈失败")
+	}
+	Stack.CurrentFn = runtime.FuncForPC(Stack.CurrentStack).Name()
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("CallerInfo", trace.WithAttributes(
+		attribute.String("CurrentFnName", Stack.CurrentFn),
+		attribute.Int("CurrentFnLine", Stack.CurrentFnLine),
+		attribute.String("CurrentFileName", Stack.CurrentFileName)))
+	span.End()
+	fmt.Println(Stack)
+	return nil
+}
