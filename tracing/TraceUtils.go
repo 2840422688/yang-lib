@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/TarsCloud/TarsGo/tars"
 	"github.com/TarsCloud/TarsGo/tars/util/current"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"runtime"
@@ -53,20 +53,35 @@ func WriteServantLog(ctx context.Context) context.Context {
 	return ctx
 }
 
+//func ReportErrorToTracing(ctx context.Context, name string, err string) error {
+//	span := trace.SpanFromContext(ctx)
+//	span.AddEvent("log", trace.WithAttributes(attribute.String("error", err)))
+//	span.End()
+//	return errors.New(err)
+//}
+
 func ReportErrorToTracing(ctx context.Context, name string, err string) error {
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("log", trace.WithAttributes(attribute.String("error", err)))
-	span.End()
+	span.SetAttributes(attribute.String("error", err))
 	return errors.New(err)
 }
+
+//	func ReportHttpRequestToTracing(ctx context.Context, name string, Body map[string]interface{}) {
+//		j, err := json.Marshal(Body)
+//		if err != nil {
+//			return
+//		}
+//		span := trace.SpanFromContext(ctx)
+//		span.AddEvent("log", trace.WithAttributes(attribute.String("response", string(j))))
+//		span.End()
+//	}
 func ReportHttpRequestToTracing(ctx context.Context, name string, Body map[string]interface{}) {
 	j, err := json.Marshal(Body)
 	if err != nil {
 		return
 	}
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("log", trace.WithAttributes(attribute.String("response", string(j))))
-	span.End()
+	span.SetAttributes(attribute.String("response", string(j)))
 }
 
 type CurrentStackInfo struct {
@@ -78,6 +93,22 @@ type CurrentStackInfo struct {
 	OK              bool
 }
 
+//func ReportServiceInfoToTracing(ctx context.Context) error {
+//	Stack := CurrentStackInfo{}
+//	if Stack.CurrentStack, Stack.CurrentFileName, Stack.CurrentFnLine, Stack.OK = runtime.Caller(1); !Stack.OK {
+//		return errors.New("获取当前调用栈失败")
+//	}
+//	Stack.CurrentFn = runtime.FuncForPC(Stack.CurrentStack).Name()
+//	span := trace.SpanFromContext(ctx)
+//	span.AddEvent("log",trace.WithAttributes(
+//		attribute.String("CurrentFnName", Stack.CurrentFn),
+//		attribute.Int("CurrentFnLine", Stack.CurrentFnLine),
+//		attribute.String("CurrentFileName", Stack.CurrentFileName),
+//	))
+//	span.End()
+//	return nil
+//}
+
 func ReportServiceInfoToTracing(ctx context.Context) error {
 	Stack := CurrentStackInfo{}
 	if Stack.CurrentStack, Stack.CurrentFileName, Stack.CurrentFnLine, Stack.OK = runtime.Caller(1); !Stack.OK {
@@ -85,11 +116,21 @@ func ReportServiceInfoToTracing(ctx context.Context) error {
 	}
 	Stack.CurrentFn = runtime.FuncForPC(Stack.CurrentStack).Name()
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("log", trace.WithAttributes(
+	span.SetAttributes(
 		attribute.String("CurrentFnName", Stack.CurrentFn),
 		attribute.Int("CurrentFnLine", Stack.CurrentFnLine),
-		attribute.String("CurrentFileName", Stack.CurrentFileName)))
-	span.End()
-	fmt.Println(Stack)
+		attribute.String("CurrentFileName", Stack.CurrentFileName),
+	)
 	return nil
+}
+
+func StartTraceAndSpan(tarsCtx context.Context, name string) (ctx context.Context, span trace.Span) {
+	ctx, span = otel.Tracer("").Start(tarsCtx, name)
+	return
+}
+
+func StopTraceAndSpan(tarsCtx context.Context) (ctx context.Context, span trace.Span) {
+	span = trace.SpanFromContext(tarsCtx)
+	span.End()
+	return
 }

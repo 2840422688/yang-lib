@@ -28,9 +28,12 @@ func RequestByPost(ctx context.Context, url string, data url.Values) (result map
 		return nil, err
 	}
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("log", trace.WithAttributes(
+	span.SetAttributes(
 		attribute.String("RequestParams", string(res_json)),
 		attribute.String("ResponseParams", string(req_json)),
-	))
+		attribute.String("Protocol", res.Request.Proto),
+		attribute.String("URL", url),
+		attribute.String("Method", res.Request.Method),
+	)
 	return result, nil
 }
