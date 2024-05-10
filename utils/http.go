@@ -1,15 +1,18 @@
 package Utils
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
 )
 
-func RequestByPost(url string, data url.Values) (result map[string]interface{}, err error) {
+func RequestByPost(ctx context.Context, url string, data url.Values) (result map[string]interface{}, err error) {
 	client := http.Client{Timeout: time.Second * 10}
 	res, err := client.PostForm(url, data)
 	if err != nil {
@@ -20,5 +23,14 @@ func RequestByPost(url string, data url.Values) (result map[string]interface{}, 
 	if err = json.Unmarshal(res_json, &result); err != nil {
 		return nil, errors.New("响应数据反序列化失败" + err.Error())
 	}
+	var req_json []byte
+	if req_json, err = json.Marshal(data); err != nil {
+		return nil, err
+	}
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("log", trace.WithAttributes(
+		attribute.String("RequestParams", string(res_json)),
+		attribute.String("ResponseParams", string(req_json)),
+	))
 	return result, nil
 }

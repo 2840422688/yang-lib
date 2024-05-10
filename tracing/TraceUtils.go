@@ -55,7 +55,7 @@ func WriteServantLog(ctx context.Context) context.Context {
 
 func ReportErrorToTracing(ctx context.Context, name string, err string) error {
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("error", trace.WithAttributes(attribute.String("error", err)))
+	span.AddEvent("log", trace.WithAttributes(attribute.String("error", err)))
 	span.End()
 	return errors.New(err)
 }
@@ -65,7 +65,7 @@ func ReportHttpRequestToTracing(ctx context.Context, name string, Body map[strin
 		return
 	}
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("info", trace.WithAttributes(attribute.String("response", string(j))))
+	span.AddEvent("log", trace.WithAttributes(attribute.String("response", string(j))))
 	span.End()
 }
 
@@ -85,7 +85,7 @@ func ReportServiceInfoToTracing(ctx context.Context) error {
 	}
 	Stack.CurrentFn = runtime.FuncForPC(Stack.CurrentStack).Name()
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent("CallerInfo", trace.WithAttributes(
+	span.AddEvent("log", trace.WithAttributes(
 		attribute.String("CurrentFnName", Stack.CurrentFn),
 		attribute.Int("CurrentFnLine", Stack.CurrentFnLine),
 		attribute.String("CurrentFileName", Stack.CurrentFileName)))
