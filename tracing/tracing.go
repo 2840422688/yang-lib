@@ -10,7 +10,7 @@ import (
 var tp *trace.TracerProvider
 
 func OpenTraceProvider(serviceNameKey string) {
-	if tp != nil {
+	if tp == nil {
 		tp = NewTracerProvider(serviceNameKey, "jaeger")
 	}
 	return
